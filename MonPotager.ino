@@ -14,13 +14,23 @@ const char *appSKey = "3C10E339A742B3DE7542AEB2172D092D";
 TheThingsNetwork ttn(loraSerial, debugSerial, freqPlan);
 CayenneLPP lpp(51);
 uint8_t led = 0;
+uint8_t led2 = 0;
 
 void setup()
 {
   loraSerial.begin(57600);
   debugSerial.begin(9600);
+
   pinMode(LED_BUILTIN, OUTPUT);
   digitalWrite(LED_BUILTIN, LOW);
+  
+  pinMode(LED_RED, OUTPUT);
+  digitalWrite(LED_RED, HIGH);
+  pinMode(LED_GREEN, OUTPUT);
+  digitalWrite(LED_GREEN, HIGH);
+  pinMode(LED_BLUE, OUTPUT);
+  digitalWrite(LED_BLUE, HIGH);
+  
   randomSeed(analogRead(0));
 
   // Wait a maximum of 10s for Serial Monitor
@@ -56,7 +66,7 @@ void loop() {
   lpp.addPresence(5, presence);
   lpp.addGPS(6, 45.18434, 5.75358, 300.05);
   lpp.addDigitalOutput(7, led);
-  lpp.addDigitalOutput(8, 0);
+  lpp.addDigitalOutput(8, led2);
 
   ttn.sendBytes(lpp.getBuffer(), lpp.getSize());
 
@@ -76,18 +86,29 @@ float getTemperature()
 
 void message(const byte *payload, size_t size, port_t port){
   debugSerial.println("-- MESSAGE");
+  debugSerial.println(payload[0]);
 
-  if (size != 4 && payload[0] != 2 && payload[1] != 00) {
-    debugSerial.println("Order not supported");
+  if (payload[0] == 7) {
+    if (payload[2] > 0) {
+      debugSerial.println("LED ON");
+      led = 1;
+      digitalWrite(LED_BUILTIN, HIGH);
+    } else {
+      debugSerial.println("LED OFF");
+      led = 0;
+      digitalWrite(LED_BUILTIN, LOW);
+    }
+  } else if (payload[0] == 8) {
+    if (payload[2] > 0) {
+      debugSerial.println("LED2 ON");
+      led2 = 1;
+      digitalWrite(LED_RED, LOW);
+    } else {
+      debugSerial.println("LED2 OFF");
+      led2 = 0;
+      digitalWrite(LED_RED, HIGH);
+    }
   }
 
-  if (payload[2] > 0) {
-    debugSerial.println("LED ON");
-    led = 1;
-    digitalWrite(LED_BUILTIN, HIGH);
-  } else {
-    debugSerial.println("LED OFF");
-    led = 0;
-    digitalWrite(LED_BUILTIN, LOW);
-  }
+  
 }
